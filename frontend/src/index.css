@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --bg-app: #0A0A0B;
+    --bg-surface: #111113;
+    --bg-surface-raised: #17171A;
+    --border-app: #242428;
+    --text-app: #EDEDEF;
+    --text-muted: #8B8B94;
+    --text-faint: #5C5C66;
+    --accent: #3B6CFF;
+    --color-success: #2FA36B;
+    --color-warning: #C9932B;
+    --color-danger: #D2554D;
+  }
+
+  html.light {
+    --bg-app: #FAFAFA;
+    --bg-surface: #FFFFFF;
+    --bg-surface-raised: #F4F4F5;
+    --border-app: #E4E4E7;
+    --text-app: #111113;
+    --text-muted: #62626B;
+    --text-faint: #9A9AA3;
+    --accent: #3B6CFF;
+    --color-success: #2FA36B;
+    --color-warning: #C9932B;
+    --color-danger: #D2554D;
+  }
+
+  * {
+    border-color: var(--border-app);
+  }
+
+  body {
+    background-color: var(--bg-app);
+    color: var(--text-app);
+    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  code, pre, .font-mono, .mono {
+    font-family: 'Geist Mono', monospace;
+    font-feature-settings: "tnum" 1;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* Custom focus rings conforming to 2px solid accent */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* Pulse animation without gradient */
+@keyframes subtle-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
+}
+
+.animate-skeleton {
+  animation: subtle-pulse 1.6s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Scrollbar styling without gradients or blur */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-surface);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--border-app);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-faint);
+}

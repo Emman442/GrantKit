@@ -1,0 +1,6 @@
+{
+  "name": "GrantKit",
+  "description": "Decentralized intelligent grants platform powered by on-chain LLM consensus on GenLayer.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
