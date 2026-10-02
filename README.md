@@ -32,7 +32,7 @@ tests/
     test_resolve_bet.py  # Bet resolution with web/LLM mocks
     test_views.py        # Read-only view methods
   integration/           # Full tests against GenLayer Studio
-    test_football_bets.py
+    test_grantkit.py
     fixtures.py          # Expected state fixtures
 frontend/               # Next.js 15 app (TypeScript, TanStack Query, Radix UI)
 deploy/                 # TypeScript deployment scripts
@@ -56,7 +56,7 @@ pip install -r requirements.txt
 Run the GenVM linter to catch issues before deployment:
 
 ```shell
-genvm-lint check contracts/football_bets.py
+genvm-lint check contracts/grantkit.py
 ```
 
 The linter catches:

@@ -16,7 +16,7 @@ export const GENLAYER_NETWORK = {
     symbol: import.meta.env.VITE_GENLAYER_SYMBOL || "GEN",
     decimals: 18,
   },
-  rpcUrls: [import.meta.env.VITE_GENLAYER_RPC_URL || "https://studio-next.genlayer.com/api"],
+  rpcUrls: [import.meta.env.VITE_GENLAYER_RPC_URL || "https://studio.genlayer.com/api"],
   blockExplorerUrls: [],
 };
 

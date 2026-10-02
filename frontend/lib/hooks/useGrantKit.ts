@@ -4,7 +4,6 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import GrantKit from "../contracts/GrantKit";
 import { getContractAddress, getStudioUrl } from "../genlayer/client";
-import type { FeePresetLevel } from "../genlayer/fees";
 import { useWallet } from "../genlayer/wallet";
 import { success, error, configError } from "../utils/toast";
 import type {
@@ -17,7 +16,6 @@ export function useGrantKitContract(): GrantKit | null {
   const { address } = useWallet();
   const contractAddress = getContractAddress();
   const studioUrl = getStudioUrl();
-
 
   const contract = useMemo(() => {
     if (!contractAddress) {
@@ -35,11 +33,8 @@ export function useGrantKitContract(): GrantKit | null {
     return new GrantKit(contractAddress, address, studioUrl);
   }, [contractAddress, address, studioUrl]);
 
-
   return contract;
 }
-
-
 
 function invalidateGrantQueries(queryClient: ReturnType<typeof useQueryClient>) {
   queryClient.invalidateQueries({ queryKey: ["grantConfig"] });
@@ -52,7 +47,6 @@ function invalidateGrantQueries(queryClient: ReturnType<typeof useQueryClient>) 
 
 export function useGrantConfig() {
   const contract = useGrantKitContract();
-
 
   return useQuery<GrantConfig | null, Error>({
     queryKey: ["grantConfig"],
@@ -148,13 +142,7 @@ export function useFundPool() {
   const [isFunding, setIsFunding] = useState(false);
 
   const mutation = useMutation({
-    mutationFn: async ({
-      amount,
-      feePresetLevel,
-    }: {
-      amount: bigint;
-      feePresetLevel?: FeePresetLevel;
-    }) => {
+    mutationFn: async ({ amount }: { amount: bigint }) => {
       if (!contract) {
         throw new Error(
           "Contract not configured. Please set NEXT_PUBLIC_CONTRACT_ADDRESS in your .env file."
@@ -164,11 +152,7 @@ export function useFundPool() {
         throw new Error("Wallet not connected. Please connect your wallet to fund the pool.");
       }
       setIsFunding(true);
-      const feePreset = await contract.estimateFundFees(
-        amount,
-        feePresetLevel ?? "standard"
-      );
-      return contract.fund(amount, feePreset);
+      return contract.fund(amount);
     },
     onSuccess: () => {
       invalidateGrantQueries(queryClient);
@@ -208,7 +192,6 @@ export function useSubmitProposal() {
       milestones,
       amount,
       deposit,
-      feePresetLevel,
     }: {
       title: string;
       pitch: string;
@@ -216,7 +199,6 @@ export function useSubmitProposal() {
       milestones: string[];
       amount: number;
       deposit: bigint;
-      feePresetLevel?: FeePresetLevel;
     }) => {
       if (!contract) {
         throw new Error(
@@ -227,24 +209,7 @@ export function useSubmitProposal() {
         throw new Error("Wallet not connected. Please connect your wallet to submit a proposal.");
       }
       setIsSubmitting(true);
-      const feePreset = await contract.estimateSubmitProposalFees(
-        title,
-        pitch,
-        links,
-        milestones,
-        amount,
-        deposit,
-        feePresetLevel ?? "standard"
-      );
-      return contract.submitProposal(
-        title,
-        pitch,
-        links,
-        milestones,
-        amount,
-        deposit,
-        feePreset
-      );
+      return contract.submitProposal(title, pitch, links, milestones, amount, deposit);
     },
     onSuccess: () => {
       invalidateGrantQueries(queryClient);
@@ -283,12 +248,10 @@ export function useSubmitMilestone() {
       pid,
       evidenceUrl,
       notes,
-      feePresetLevel,
     }: {
       pid: number;
       evidenceUrl: string;
       notes: string;
-      feePresetLevel?: FeePresetLevel;
     }) => {
       if (!contract) {
         throw new Error(
@@ -300,13 +263,7 @@ export function useSubmitMilestone() {
       }
       setIsSubmitting(true);
       setSubmittingPid(pid);
-      const feePreset = await contract.estimateSubmitMilestoneFees(
-        pid,
-        evidenceUrl,
-        notes,
-        feePresetLevel ?? "standard"
-      );
-      return contract.submitMilestone(pid, evidenceUrl, notes, feePreset);
+      return contract.submitMilestone(pid, evidenceUrl, notes);
     },
     onSuccess: () => {
       invalidateGrantQueries(queryClient);
@@ -342,12 +299,8 @@ export function useAbandonGrant() {
 
   const mutation = useMutation({
     mutationFn: async (pid: number) => {
-      if (!contract) {
-        throw new Error("Contract not configured.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected.");
-      }
+      if (!contract) throw new Error("Contract not configured.");
+      if (!address) throw new Error("Wallet not connected.");
       return contract.abandonGrant(pid);
     },
     onSuccess: () => {
@@ -378,12 +331,8 @@ export function useReclaimInactiveGrant() {
 
   const mutation = useMutation({
     mutationFn: async (pid: number) => {
-      if (!contract) {
-        throw new Error("Contract not configured.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected.");
-      }
+      if (!contract) throw new Error("Contract not configured.");
+      if (!address) throw new Error("Wallet not connected.");
       return contract.reclaimInactiveGrant(pid);
     },
     onSuccess: () => {
@@ -414,12 +363,8 @@ export function useCancelExhaustedGrant() {
 
   const mutation = useMutation({
     mutationFn: async (pid: number) => {
-      if (!contract) {
-        throw new Error("Contract not configured.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected.");
-      }
+      if (!contract) throw new Error("Contract not configured.");
+      if (!address) throw new Error("Wallet not connected.");
       return contract.cancelExhaustedGrant(pid);
     },
     onSuccess: () => {
@@ -450,12 +395,8 @@ export function useWithdrawPool() {
 
   const mutation = useMutation({
     mutationFn: async (amount: number) => {
-      if (!contract) {
-        throw new Error("Contract not configured.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected.");
-      }
+      if (!contract) throw new Error("Contract not configured.");
+      if (!address) throw new Error("Wallet not connected.");
       return contract.withdrawPool(amount);
     },
     onSuccess: () => {
@@ -486,12 +427,8 @@ export function useSetCriteria() {
 
   const mutation = useMutation({
     mutationFn: async (newCriteria: string) => {
-      if (!contract) {
-        throw new Error("Contract not configured.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected.");
-      }
+      if (!contract) throw new Error("Contract not configured.");
+      if (!address) throw new Error("Wallet not connected.");
       return contract.setCriteria(newCriteria);
     },
     onSuccess: () => {
@@ -522,12 +459,8 @@ export function useSetPaused() {
 
   const mutation = useMutation({
     mutationFn: async (paused: boolean) => {
-      if (!contract) {
-        throw new Error("Contract not configured.");
-      }
-      if (!address) {
-        throw new Error("Wallet not connected.");
-      }
+      if (!contract) throw new Error("Contract not configured.");
+      if (!address) throw new Error("Wallet not connected.");
       return contract.setPaused(paused);
     },
     onSuccess: (_data, paused) => {
