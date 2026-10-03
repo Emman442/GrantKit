@@ -19,7 +19,16 @@ export default async function main(client: GenLayerClient<any>) {
 
     const deployTransaction = await client.deployContract({
       code: contractCode,
-      args: [],
+      args: [
+        "A proposal must name a public deliverable, cite a reachable https link, and describe at least one milestone.",
+        3,
+        3,
+        5_000_000_000_000_000_000n,
+        0n,
+        4,
+        3,
+        30,
+      ],
     });
 
     const receipt = await client.waitForTransactionReceipt({

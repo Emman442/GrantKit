@@ -180,3 +180,72 @@ def test_only_owner_can_withdraw(direct_vm, direct_deploy, direct_owner, direct_
     direct_vm.sender = direct_owner
     contract.withdraw_pool(100)
     assert int(contract.get_treasury()["pool"]) == 400
+
+
+def test_milestone_uses_criteria_frozen_at_approval(direct_vm, direct_deploy, direct_owner, direct_alice):
+    contract = deploy(direct_vm, direct_deploy, direct_owner)
+    pay(direct_vm, 500)
+    contract.fund()
+
+    direct_vm.sender = direct_alice
+    mock_pass(direct_vm, "PASS")
+    pid = int(submit(contract, direct_vm, 100))
+    frozen = contract.get_proposal(pid)["criteria"]
+    assert frozen == CRITERIA
+
+    direct_vm.sender = direct_owner
+    direct_vm.value = 0
+    contract.set_criteria("Completely different rubric about closed source mobile apps only.")
+    assert contract.get_config()["criteria"] != frozen
+    assert contract.get_proposal(pid)["criteria"] == frozen
+
+    direct_vm.sender = direct_alice
+    direct_vm.clear_mocks()
+    direct_vm.mock_web(
+        r"example\.com/project",
+        {"status": 200, "body": "Public repository and working prototype notes for the grant."},
+    )
+    direct_vm.mock_llm(r"working prototype and a public repository", "PASS")
+    contract.submit_milestone(pid, "https://example.com/project", "Repository is public and the prototype runs")
+
+    row = contract.get_proposal(pid)
+    assert row["status"] == "completed"
+    assert row["criteria"] == CRITERIA
+
+
+def test_large_amount_survives_write_and_read(direct_vm, direct_deploy, direct_owner):
+    amount = 10**20 + 123
+    direct_vm.sender = direct_owner
+    direct_vm.value = 0
+    contract = direct_deploy(
+        CONTRACT,
+        CRITERIA,
+        3,
+        3,
+        amount,
+        0,
+        4,
+        2,
+        14,
+        sdk_version="v0.2.16",
+    )
+    pay(direct_vm, amount)
+    contract.fund()
+
+    config = contract.get_config()
+    treasury = contract.get_treasury()
+    assert config["max_award"] == str(amount)
+    assert treasury["pool"] == str(amount)
+    assert treasury["escrowed"] == "0"
+    assert int(treasury["pool"]) == amount
+
+
+def test_deploy_script_supplies_eight_constructor_arguments():
+    from pathlib import Path
+
+    text = Path("deploy/deployScript.ts").read_text(encoding="utf-8")
+    start = text.index("args:")
+    body = text[start:text.index("]", start)]
+    assert "args: []" not in text
+    values = [line.strip().rstrip(",") for line in body.splitlines() if line.strip() and "args:" not in line]
+    assert len(values) == 8

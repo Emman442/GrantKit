@@ -274,7 +274,7 @@ def _milestone_task(criteria, title, pitch, milestone_text, index, total, eviden
         + "\nTASK: Rate whether the applicant has DELIVERED milestone " + str(index + 1)
         + " of " + str(total) + " of an already-approved grant. Rate how fully the evidence "
         + "shows this specific milestone is complete and consistent with the criteria.\n\n"
-        + "CRITERIA (trusted, set by the grant operator):\n" + criteria
+        + "CRITERIA (trusted, fixed when this grant was approved):\n" + criteria
         + "\n\n<untrusted_applicant_submission>\nProject: " + _clean(title)
         + "\nOriginal pitch:\n" + _clean(pitch)
         + "\nMilestone to verify:\n" + _clean(milestone_text)
@@ -296,6 +296,8 @@ def _public_row(pid: int, row: dict) -> dict:
     out = dict(row)
     out["id"] = pid
     out["found"] = True
+    out["amount"] = str(int(row.get("amount", 0)))
+    out["released"] = str(int(row.get("released", 0)))
     return out
 
 
@@ -368,7 +370,7 @@ class OpenCriteriaGrants(gl.Contract):
         self.escrowed = u256(int(self.escrowed) - remaining)
         row["status"] = "cancelled"
         row["feedback"] = reason
-        row["log"].append({"type": "closed", "reason": reason, "returned": remaining, "at": _now()})
+        row["log"].append({"type": "closed", "reason": reason, "returned": str(remaining), "at": _now()})
 
     @gl.public.write.payable
     def fund(self) -> None:
@@ -436,6 +438,7 @@ class OpenCriteriaGrants(gl.Contract):
             "status": "rejected",
             "tier": tier,
             "score": TIER_SCORE[tv],
+            "criteria": criteria,
             "criteria_version": int(self.criteria_version),
             "created_at": now,
             "last_activity": now,
@@ -487,8 +490,11 @@ class OpenCriteriaGrants(gl.Contract):
         if len(notes) > MAX_NOTES:
             _fail("notes too long")
 
+        frozen = str(row.get("criteria", "")).strip()
+        if len(frozen) < 20:
+            _fail("approved grant has no frozen criteria")
         tier = _checked_tier(_evaluate(
-            _milestone_task(str(self.criteria), row["title"], row["pitch"], row["milestones"][idx],
+            _milestone_task(frozen, row["title"], row["pitch"], row["milestones"][idx],
                             idx, total, evidence_url, notes.strip()),
             [evidence_url]))
         tv = TIER_VALUE[tier]
@@ -626,8 +632,8 @@ class OpenCriteriaGrants(gl.Contract):
             "pass_tier_name": TIER_NAMES[int(self.pass_tier)],
             "milestone_tier": int(self.milestone_tier),
             "milestone_tier_name": TIER_NAMES[int(self.milestone_tier)],
-            "max_award": int(self.max_award),
-            "submission_deposit": int(self.submission_deposit),
+            "max_award": str(int(self.max_award)),
+            "submission_deposit": str(int(self.submission_deposit)),
             "max_milestones": int(self.max_milestones),
             "max_attempts": int(self.max_attempts),
             "inactivity_days": int(self.inactivity_days),
@@ -637,8 +643,8 @@ class OpenCriteriaGrants(gl.Contract):
     @gl.public.view
     def get_treasury(self) -> dict:
         return {
-            "pool": int(self.pool),
-            "escrowed": int(self.escrowed),
+            "pool": str(int(self.pool)),
+            "escrowed": str(int(self.escrowed)),
             "proposal_count": int(self.proposal_counter),
         }
 
@@ -683,4 +689,3 @@ class OpenCriteriaGrants(gl.Contract):
     @gl.public.view
     def debug_parse_time(self, ts: str) -> int:
         return _epoch(ts)
-        
