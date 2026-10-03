@@ -407,7 +407,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                   </p>
                 </div>
                 <div className="font-mono text-xs px-2 py-0.5 rounded-[4px] bg-[var(--bg-surface-raised)] border border-[var(--border-app)] text-[var(--text-muted)]">
-                  Directive v{config?.criteria_version ?? 1}
+                  Directive #{config?.criteria_version ?? 1}
                 </div>
               </div>
               <form onSubmit={handleSaveCriteria} className="space-y-4">
