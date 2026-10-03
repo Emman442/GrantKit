@@ -26,6 +26,8 @@ function MainApp() {
     return 'overview';
   });
 
+
+
   const handleNavigate = (page: PageId) => {
     setActivePage(page);
     window.location.hash = page;
@@ -64,15 +66,25 @@ function MainApp() {
 }
 
 export default function App() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: 2000,
+        refetchOnWindowFocus: false,
+      },
+    },
+  });
   return (
-    <QueryClientProvider client={new QueryClient()}>
-    <ThemeProvider>
-      <ToastProvider>
-        <WalletProvider>
-          <MainApp />
-        </WalletProvider>
-      </ToastProvider>
-    </ThemeProvider>
+    <QueryClientProvider client={queryClient}>
+      <WalletProvider>
+        <ThemeProvider>
+          <ToastProvider>
+
+            <MainApp />
+
+          </ToastProvider>
+        </ThemeProvider>
+      </WalletProvider>
     </QueryClientProvider>
   );
 }

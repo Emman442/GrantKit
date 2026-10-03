@@ -34,7 +34,8 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({ onNavigate }) => {
   const isOwner = address === import.meta.env.VITE_ADMIN_ADDRESS?.toLowerCase();
   const { error: toastError } = useToast();
   const { data: config } = useGrantConfig();
-  console.log(config)
+  const query = useGrantConfig();
+console.log(query.status, query.error, query.data);
   const { data: treasury } = useGrantTreasury();
   const { data: proposals = [] } = useProposals(1, 50);
   const { submitProposalAsync, isSubmitting } = useSubmitProposal();

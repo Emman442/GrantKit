@@ -1,12 +1,12 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
-import {defineConfig} from 'vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig(() => {
   return {
     plugins: [react(), tailwindcss()],
-     envPrefix: ["VITE_", "NEXT_PUBLIC_"],
+    envPrefix: ["VITE_", "NEXT_PUBLIC_"],
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),
@@ -18,6 +18,14 @@ export default defineConfig(() => {
       hmr: process.env.DISABLE_HMR !== 'true',
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
+
+       proxy: {
+      "/genlayer-api": {
+        target: "https://studio.genlayer.com",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/genlayer-api/, "/api"),
+      },
+    },
     },
   };
 });

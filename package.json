@@ -12,9 +12,6 @@
     "lint": "cd frontend && npm run lint",
     "deploy": "genlayer deploy"
   },
-  "devDependencies": {
-    "genlayer-js": "^1.1.8"
-  },
   "dependencies": {
     "@tanstack/react-query": "^5.104.0",
     "sonner": "^2.0.8"

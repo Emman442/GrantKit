@@ -56,12 +56,9 @@ function normalizeProposal(raw: any): GrantProposal {
 class GrantKit {
   private contractAddress: `0x${string}`;
   private client: ReturnType<typeof createClient>;
-  private studioUrl?: string;
 
   constructor(contractAddress: string, address?: string | null, studioUrl?: string) {
     this.contractAddress = contractAddress as `0x${string}`;
-    this.studioUrl = studioUrl;
-
     const config: any = { chain: studionet };
     if (address) config.account = address as `0x${string}`;
     if (studioUrl) config.endpoint = studioUrl;
@@ -69,12 +66,10 @@ class GrantKit {
   }
 
   updateAccount(address: string): void {
-    const config: any = {
+    this.client = createClient({
       chain: studionet,
       account: address as `0x${string}`,
-    };
-    if (this.studioUrl) config.endpoint = this.studioUrl;
-    this.client = createClient(config);
+    });
   }
 
    private async read<T>(functionName: string, args: any[] = []): Promise<T> {
@@ -85,6 +80,7 @@ class GrantKit {
     }) as Promise<T>;
   }
 
+  
   private async write(
     functionName: string,
     args: any[],

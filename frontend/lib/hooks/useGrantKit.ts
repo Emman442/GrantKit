@@ -47,7 +47,6 @@ function invalidateGrantQueries(queryClient: ReturnType<typeof useQueryClient>) 
 
 export function useGrantConfig() {
   const contract = useGrantKitContract();
-
   return useQuery<GrantConfig | null, Error>({
     queryKey: ["grantConfig"],
     queryFn: async () => {
