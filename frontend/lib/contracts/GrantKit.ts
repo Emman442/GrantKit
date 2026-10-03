@@ -77,34 +77,34 @@ class GrantKit {
     this.client = createClient(config);
   }
 
- private async read<T>(functionName: string, args: any[] = []): Promise<T> {
-  return this.client.readContract({
-    address: this.contractAddress,
-    functionName,
-    args,
-  }) as Promise<T>;
-}
+   private async read<T>(functionName: string, args: any[] = []): Promise<T> {
+    return this.client.readContract({
+      address: this.contractAddress,
+      functionName,
+      args,
+    }) as Promise<T>;
+  }
 
-private async write(
-  functionName: string,
-  args: any[],
-  value: bigint = 0n
-): Promise<TransactionReceipt> {
-  await this.client.connect("studionet");
-  const txHash = await this.client.writeContract({
-    address: this.contractAddress,
-    functionName,
-    args,
-    value,
-  });
-  const receipt = await this.client.waitForTransactionReceipt({
-    hash: txHash,
-    status: TransactionStatus.ACCEPTED,
-    retries: 48,
-    interval: 5000,
-  });
-  return receipt as TransactionReceipt;
-}
+  private async write(
+    functionName: string,
+    args: any[],
+    value: bigint
+  ): Promise<TransactionReceipt> {
+    await this.client.connect("studionet");
+    const txHash = await this.client.writeContract({
+      address: this.contractAddress,
+      functionName,
+      args,
+      value,
+    });
+    const receipt = await this.client.waitForTransactionReceipt({
+      hash: txHash,
+      status: TransactionStatus.ACCEPTED,
+      retries: 48,
+      interval: 5000,
+    });
+    return receipt as TransactionReceipt;
+  }
 
   async getConfig(): Promise<GrantConfig> {
     const raw: any = await this.read("get_config");
@@ -178,23 +178,23 @@ private async write(
   }
 
   async abandonGrant(pid: number): Promise<TransactionReceipt> {
-    return this.write("abandon_grant", [pid]);
+    return this.write("abandon_grant", [pid], 0n);
   }
 
   async reclaimInactiveGrant(pid: number): Promise<TransactionReceipt> {
-    return this.write("reclaim_inactive_grant", [pid]);
+    return this.write("reclaim_inactive_grant", [pid], 0n);
   }
 
   async cancelExhaustedGrant(pid: number): Promise<TransactionReceipt> {
-    return this.write("cancel_exhausted_grant", [pid]);
+    return this.write("cancel_exhausted_grant", [pid], 0n);
   }
 
   async withdrawPool(amount: number): Promise<TransactionReceipt> {
-    return this.write("withdraw_pool", [amount]);
+    return this.write("withdraw_pool", [amount], 0n);
   }
 
   async setCriteria(newCriteria: string): Promise<TransactionReceipt> {
-    return this.write("set_criteria", [newCriteria]);
+    return this.write("set_criteria", [newCriteria], 0n);
   }
 
   async setParameters(params: {
@@ -214,23 +214,23 @@ private async write(
       params.maxMilestones,
       params.maxAttempts,
       params.inactivityDays,
-    ]);
+    ], 0n);
   }
 
   async setPaused(paused: boolean): Promise<TransactionReceipt> {
-    return this.write("set_paused", [paused]);
+    return this.write("set_paused", [paused], 0n);
   }
 
   async proposeOwner(newOwner: string): Promise<TransactionReceipt> {
-    return this.write("propose_owner", [newOwner]);
+    return this.write("propose_owner", [newOwner], 0n);
   }
 
   async cancelOwnershipTransfer(): Promise<TransactionReceipt> {
-    return this.write("cancel_ownership_transfer", []);
+    return this.write("cancel_ownership_transfer", [], 0n);
   }
 
   async acceptOwnership(): Promise<TransactionReceipt> {
-    return this.write("accept_ownership", []);
+    return this.write("accept_ownership", [], 0n);
   }
 }
 

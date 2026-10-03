@@ -50,8 +50,10 @@ export function useGrantConfig() {
 
   return useQuery<GrantConfig | null, Error>({
     queryKey: ["grantConfig"],
-    queryFn: () => {
+    queryFn: async () => {
       if (!contract) return Promise.resolve(null);
+      const data = await contract.getConfig();
+      console.log("Fetched grant config:", data);
       return contract.getConfig();
     },
     refetchOnWindowFocus: true,
