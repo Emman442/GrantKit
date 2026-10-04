@@ -22,6 +22,13 @@ function toNumber(value: unknown, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
+function toWei(value: unknown, fallback = "0"): string {
+  if (typeof value === "bigint") return value.toString();
+  if (typeof value === "string" && /^(0|[1-9]\d*)$/.test(value.trim())) return value.trim();
+  if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) return String(value);
+  return fallback;
+}
+
 function normalizeProposal(raw: any): GrantProposal {
   if (!raw || typeof raw !== "object") {
     return { id: 0, found: false };
@@ -35,8 +42,8 @@ function normalizeProposal(raw: any): GrantProposal {
     pitch: String(raw.pitch ?? ""),
     links: Array.isArray(raw.links) ? raw.links.map(String) : [],
     milestones: Array.isArray(raw.milestones) ? raw.milestones.map(String) : [],
-    amount: toNumber(raw.amount),
-    released: toNumber(raw.released),
+    amount: toWei(raw.amount),
+    released: toWei(raw.released),
     next_milestone: toNumber(raw.next_milestone),
     attempts: toNumber(raw.attempts),
     attempt_cap: toNumber(raw.attempt_cap),
@@ -72,7 +79,7 @@ class GrantKit {
     });
   }
 
-   private async read<T>(functionName: string, args: any[] = []): Promise<T> {
+  private async read<T>(functionName: string, args: any[] = []): Promise<T> {
     return this.client.readContract({
       address: this.contractAddress,
       functionName,
@@ -80,7 +87,6 @@ class GrantKit {
     }) as Promise<T>;
   }
 
-  
   private async write(
     functionName: string,
     args: any[],
@@ -113,8 +119,8 @@ class GrantKit {
       pass_tier_name: String(raw?.pass_tier_name ?? ""),
       milestone_tier: toNumber(raw?.milestone_tier),
       milestone_tier_name: String(raw?.milestone_tier_name ?? ""),
-      max_award: toNumber(raw?.max_award),
-      submission_deposit: toNumber(raw?.submission_deposit),
+      max_award: toWei(raw?.max_award),
+      submission_deposit: toWei(raw?.submission_deposit),
       max_milestones: toNumber(raw?.max_milestones),
       max_attempts: toNumber(raw?.max_attempts),
       inactivity_days: toNumber(raw?.inactivity_days),
@@ -125,8 +131,8 @@ class GrantKit {
   async getTreasury(): Promise<GrantTreasury> {
     const raw: any = await this.read("get_treasury");
     return {
-      pool: toNumber(raw?.pool),
-      escrowed: toNumber(raw?.escrowed),
+      pool: toWei(raw?.pool),
+      escrowed: toWei(raw?.escrowed),
       proposal_count: toNumber(raw?.proposal_count),
     };
   }
@@ -159,12 +165,12 @@ class GrantKit {
     pitch: string,
     links: string[],
     milestones: string[],
-    amount: number,
+    amount: string | bigint,
     deposit: bigint
   ): Promise<TransactionReceipt> {
     return this.write(
       "submit_proposal",
-      [title, pitch, asJsonArray(links, "links"), asJsonArray(milestones, "milestones"), amount],
+      [title, pitch, asJsonArray(links, "links"), asJsonArray(milestones, "milestones"), toWei(amount)],
       deposit
     );
   }
@@ -185,8 +191,8 @@ class GrantKit {
     return this.write("cancel_exhausted_grant", [pid], 0n);
   }
 
-  async withdrawPool(amount: number): Promise<TransactionReceipt> {
-    return this.write("withdraw_pool", [amount], 0n);
+  async withdrawPool(amount: string | bigint): Promise<TransactionReceipt> {
+    return this.write("withdraw_pool", [toWei(amount)], 0n);
   }
 
   async setCriteria(newCriteria: string): Promise<TransactionReceipt> {
@@ -196,8 +202,8 @@ class GrantKit {
   async setParameters(params: {
     passTier: number;
     milestoneTier: number;
-    maxAward: number;
-    submissionDeposit: number;
+    maxAward: string | bigint;
+    submissionDeposit: string | bigint;
     maxMilestones: number;
     maxAttempts: number;
     inactivityDays: number;
@@ -205,8 +211,8 @@ class GrantKit {
     return this.write("set_parameters", [
       params.passTier,
       params.milestoneTier,
-      params.maxAward,
-      params.submissionDeposit,
+      toWei(params.maxAward),
+      toWei(params.submissionDeposit),
       params.maxMilestones,
       params.maxAttempts,
       params.inactivityDays,

@@ -10,6 +10,14 @@ export type GrantLogEntry = {
   at?: string;
 };
 
+export interface TransactionReceipt {
+  status: string;
+  hash: string;
+  blockNumber?: number;
+  [key: string]: any;
+}
+
+
 export type GrantProposal = {
   id: number;
   found: boolean;
