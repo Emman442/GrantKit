@@ -182,7 +182,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({ onNavigate }) => {
         pitch: pitch.trim(),
         links: links.map((l) => l.trim()),
         milestones: milestones.map((m) => m.trim()),
-        amount: rawAmount,
+        amount: amountHuman,
         deposit: BigInt(config.submission_deposit),
       });
       setShowResult(true);

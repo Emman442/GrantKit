@@ -1,6 +1,7 @@
 import { createClient } from "genlayer-js";
 import { studionet } from "genlayer-js/chains";
 import { TransactionStatus } from "genlayer-js/types";
+import { parseEther } from "viem";
 import type {
   GrantConfig,
   GrantProposal,
@@ -179,13 +180,19 @@ class GrantKit {
     pitch: string,
     links: string[],
     milestones: string[],
-    amount: string | bigint,
-    deposit: bigint
+    amountGen: string | number | bigint,
+    depositWei: bigint
   ): Promise<TransactionReceipt> {
     return this.write(
       "submit_proposal",
-      [title, pitch, asJsonArray(links, "links"), asJsonArray(milestones, "milestones"), toWei(amount)],
-      deposit
+      [
+        title,
+        pitch,
+        asJsonArray(links, "links"),
+        asJsonArray(milestones, "milestones"),
+        parseEther(String(amountGen)),
+      ],
+      depositWei
     );
   }
 
@@ -205,8 +212,8 @@ class GrantKit {
     return this.write("cancel_exhausted_grant", [pid], 0n);
   }
 
-  async withdrawPool(amount: string | bigint): Promise<TransactionReceipt> {
-    return this.write("withdraw_pool", [toWei(amount)], 0n);
+  async withdrawPool(amountGen: string | number | bigint): Promise<TransactionReceipt> {
+    return this.write("withdraw_pool", [parseEther(String(amountGen))], 0n);
   }
 
   async setCriteria(newCriteria: string): Promise<TransactionReceipt> {
@@ -216,8 +223,8 @@ class GrantKit {
   async setParameters(params: {
     passTier: number;
     milestoneTier: number;
-    maxAward: string | bigint;
-    submissionDeposit: string | bigint;
+    maxAwardGen: string | number | bigint;
+    submissionDepositGen: string | number | bigint;
     maxMilestones: number;
     maxAttempts: number;
     inactivityDays: number;
@@ -225,8 +232,8 @@ class GrantKit {
     return this.write("set_parameters", [
       params.passTier,
       params.milestoneTier,
-      toWei(params.maxAward),
-      toWei(params.submissionDeposit),
+      parseEther(String(params.maxAwardGen)),
+      parseEther(String(params.submissionDepositGen)),
       params.maxMilestones,
       params.maxAttempts,
       params.inactivityDays,

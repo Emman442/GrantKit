@@ -181,7 +181,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       return;
     }
     try {
-      await withdrawPoolAsync(raw);
+      await withdrawPoolAsync(withdrawAmount);
       setWithdrawAmount("");
     } catch {
       /* hook toast */
@@ -210,8 +210,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       await contract.setParameters({
         passTier,
         milestoneTier,
-        maxAward: toSmallestUnit(maxAwardHuman),
-        submissionDeposit: toSmallestUnit(depositHuman),
+        maxAwardGen: maxAwardHuman,
+        submissionDepositGen: depositHuman,
         maxMilestones,
         maxAttempts,
         inactivityDays,
@@ -300,11 +300,10 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
               <button
                 key={s.id}
                 onClick={() => setActiveSection(s.id)}
-                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs font-medium transition-colors flex items-center gap-2.5 cursor-pointer ${
-                  isActive
+                className={`w-full text-left px-3 py-2 rounded-[6px] text-xs font-medium transition-colors flex items-center gap-2.5 cursor-pointer ${isActive
                     ? "bg-[#3B6CFF] text-white"
                     : "text-[var(--text-muted)] hover:text-[var(--text-app)] hover:bg-[var(--bg-surface-raised)]"
-                }`}
+                  }`}
               >
                 {s.icon}
                 <span>{s.label}</span>

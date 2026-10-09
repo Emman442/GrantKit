@@ -51,8 +51,6 @@ export function useGrantConfig() {
     queryKey: ["grantConfig"],
     queryFn: async () => {
       if (!contract) return Promise.resolve(null);
-      const data = await contract.getConfig();
-      console.log("Fetched grant config:", data);
       return contract.getConfig();
     },
     refetchOnWindowFocus: true,
@@ -198,7 +196,7 @@ export function useSubmitProposal() {
       pitch: string;
       links: string[];
       milestones: string[];
-      amount: string | bigint;
+      amount: string | number | bigint;
       deposit: bigint;
     }) => {
       if (!contract) {
@@ -395,10 +393,10 @@ export function useWithdrawPool() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (amount: string | bigint) => {
+    mutationFn: async (amountGen: string | number | bigint) => {
       if (!contract) throw new Error("Contract not configured.");
       if (!address) throw new Error("Wallet not connected.");
-      return contract.withdrawPool(amount);
+      return contract.withdrawPool(amountGen);
     },
     onSuccess: () => {
       invalidateGrantQueries(queryClient);
