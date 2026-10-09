@@ -35,7 +35,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({ onNavigate }) => {
   const { error: toastError } = useToast();
   const { data: config } = useGrantConfig();
   const query = useGrantConfig();
-console.log(query.status, query.error, query.data);
+  console.log(query.status, query.error, query.data);
   const { data: treasury } = useGrantTreasury();
   const { data: proposals = [] } = useProposals(1, 50);
   const { submitProposalAsync, isSubmitting } = useSubmitProposal();
@@ -182,7 +182,7 @@ console.log(query.status, query.error, query.data);
         pitch: pitch.trim(),
         links: links.map((l) => l.trim()),
         milestones: milestones.map((m) => m.trim()),
-        amount: Number(rawAmount),
+        amount: rawAmount,
         deposit: BigInt(config.submission_deposit),
       });
       setShowResult(true);

@@ -198,7 +198,7 @@ export function useSubmitProposal() {
       pitch: string;
       links: string[];
       milestones: string[];
-      amount: number;
+      amount: string | bigint;
       deposit: bigint;
     }) => {
       if (!contract) {
@@ -395,7 +395,7 @@ export function useWithdrawPool() {
   const queryClient = useQueryClient();
 
   const mutation = useMutation({
-    mutationFn: async (amount: number) => {
+    mutationFn: async (amount: string | bigint) => {
       if (!contract) throw new Error("Contract not configured.");
       if (!address) throw new Error("Wallet not connected.");
       return contract.withdrawPool(amount);

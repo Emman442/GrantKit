@@ -113,7 +113,6 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   );
 
   if (!isOwner) {
-
     return (
       <div className="space-y-6 pb-16">
         <div>
@@ -182,7 +181,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       return;
     }
     try {
-      await withdrawPoolAsync(Number(raw));
+      await withdrawPoolAsync(raw);
       setWithdrawAmount("");
     } catch {
       /* hook toast */
@@ -211,8 +210,8 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
       await contract.setParameters({
         passTier,
         milestoneTier,
-        maxAward: Number(toSmallestUnit(maxAwardHuman)),
-        submissionDeposit: Number(toSmallestUnit(depositHuman)),
+        maxAward: toSmallestUnit(maxAwardHuman),
+        submissionDeposit: toSmallestUnit(depositHuman),
         maxMilestones,
         maxAttempts,
         inactivityDays,
@@ -557,7 +556,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
               ) : (
                 <div className="space-y-3">
                   {stalledProposals.map((sp) => {
-                    const unreleased = Number(sp.amount ?? 0) - Number(sp.released ?? 0);
+                    const unreleased = (BigInt(sp.amount ?? "0") - BigInt(sp.released ?? "0")).toString();
                     return (
                       <div
                         key={sp.id}
@@ -576,7 +575,7 @@ export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
                           <h4 className="text-xs font-semibold text-[var(--text-app)]">{sp.title}</h4>
                           <div className="text-[11px] text-[var(--text-muted)] font-mono">
                             Applicant: {truncateAddress(sp.applicant || "", 6, 6)} · Locked escrow:{" "}
-                            {formatGen(String(unreleased)).display}
+                            {formatGen(unreleased).display}
                           </div>
                         </div>
                         <Button

@@ -10,16 +10,24 @@ import type {
 
 const DEFAULT_PAGE_SIZE = 50;
 
-function asJsonArray(items: string[], label: string): string {
-  if (!Array.isArray(items) || items.length < 1) {
-    throw new Error(`${label} must contain at least one string`);
-  }
-  return JSON.stringify(items);
+function asRecord(value: unknown): Record<string, any> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as Record<string, any>;
 }
 
 function toNumber(value: unknown, fallback = 0): number {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : fallback;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "bigint") return Number(value);
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  }
+  return fallback;
+}
+
+function toStringValue(value: unknown, fallback = ""): string {
+  if (value === undefined || value === null) return fallback;
+  return String(value);
 }
 
 function toWei(value: unknown, fallback = "0"): string {
@@ -29,34 +37,41 @@ function toWei(value: unknown, fallback = "0"): string {
   return fallback;
 }
 
-function normalizeProposal(raw: any): GrantProposal {
-  if (!raw || typeof raw !== "object") {
-    return { id: 0, found: false };
+function asJsonArray(items: string[], label: string): string {
+  if (!Array.isArray(items) || items.length < 1) {
+    throw new Error(`${label} must contain at least one string`);
   }
+  return JSON.stringify(items);
+}
+
+function normalizeProposal(raw: unknown): GrantProposal {
+  const data = asRecord(raw);
+  if (!data.id && data.found === false) return { id: 0, found: false };
 
   return {
-    id: toNumber(raw.id),
-    found: Boolean(raw.found ?? true),
-    applicant: String(raw.applicant ?? ""),
-    title: String(raw.title ?? ""),
-    pitch: String(raw.pitch ?? ""),
-    links: Array.isArray(raw.links) ? raw.links.map(String) : [],
-    milestones: Array.isArray(raw.milestones) ? raw.milestones.map(String) : [],
-    amount: toWei(raw.amount),
-    released: toWei(raw.released),
-    next_milestone: toNumber(raw.next_milestone),
-    attempts: toNumber(raw.attempts),
-    attempt_cap: toNumber(raw.attempt_cap),
-    ms_tier: toNumber(raw.ms_tier),
-    timeout_days: toNumber(raw.timeout_days),
-    status: String(raw.status ?? ""),
-    tier: String(raw.tier ?? ""),
-    score: toNumber(raw.score),
-    criteria_version: toNumber(raw.criteria_version),
-    created_at: String(raw.created_at ?? ""),
-    last_activity: String(raw.last_activity ?? ""),
-    feedback: String(raw.feedback ?? ""),
-    log: Array.isArray(raw.log) ? raw.log : [],
+    id: toNumber(data.id),
+    found: Boolean(data.found ?? true),
+    applicant: toStringValue(data.applicant),
+    title: toStringValue(data.title),
+    pitch: toStringValue(data.pitch),
+    links: Array.isArray(data.links) ? data.links.map(String) : [],
+    milestones: Array.isArray(data.milestones) ? data.milestones.map(String) : [],
+    amount: toWei(data.amount),
+    released: toWei(data.released),
+    next_milestone: toNumber(data.next_milestone),
+    attempts: toNumber(data.attempts),
+    attempt_cap: toNumber(data.attempt_cap),
+    ms_tier: toNumber(data.ms_tier),
+    timeout_days: toNumber(data.timeout_days),
+    status: toStringValue(data.status),
+    tier: toStringValue(data.tier),
+    score: toNumber(data.score),
+    criteria: toStringValue(data.criteria),
+    criteria_version: toNumber(data.criteria_version),
+    created_at: toStringValue(data.created_at),
+    last_activity: toStringValue(data.last_activity),
+    feedback: toStringValue(data.feedback),
+    log: Array.isArray(data.log) ? data.log : [],
   };
 }
 
@@ -109,50 +124,49 @@ class GrantKit {
   }
 
   async getConfig(): Promise<GrantConfig> {
-    const raw: any = await this.read("get_config");
+    const raw = asRecord(await this.read("get_config"));
     return {
-      owner: String(raw?.owner ?? ""),
-      pending_owner: String(raw?.pending_owner ?? ""),
-      criteria: String(raw?.criteria ?? ""),
-      criteria_version: toNumber(raw?.criteria_version, 1),
-      pass_tier: toNumber(raw?.pass_tier),
-      pass_tier_name: String(raw?.pass_tier_name ?? ""),
-      milestone_tier: toNumber(raw?.milestone_tier),
-      milestone_tier_name: String(raw?.milestone_tier_name ?? ""),
-      max_award: toWei(raw?.max_award),
-      submission_deposit: toWei(raw?.submission_deposit),
-      max_milestones: toNumber(raw?.max_milestones),
-      max_attempts: toNumber(raw?.max_attempts),
-      inactivity_days: toNumber(raw?.inactivity_days),
-      paused: Boolean(raw?.paused),
+      owner: toStringValue(raw.owner),
+      pending_owner: toStringValue(raw.pending_owner),
+      criteria: toStringValue(raw.criteria),
+      criteria_version: toNumber(raw.criteria_version, 1),
+      pass_tier: toNumber(raw.pass_tier),
+      pass_tier_name: toStringValue(raw.pass_tier_name),
+      milestone_tier: toNumber(raw.milestone_tier),
+      milestone_tier_name: toStringValue(raw.milestone_tier_name),
+      max_award: toWei(raw.max_award),
+      submission_deposit: toWei(raw.submission_deposit),
+      max_milestones: toNumber(raw.max_milestones),
+      max_attempts: toNumber(raw.max_attempts),
+      inactivity_days: toNumber(raw.inactivity_days),
+      paused: Boolean(raw.paused),
     };
   }
 
   async getTreasury(): Promise<GrantTreasury> {
-    const raw: any = await this.read("get_treasury");
+    const raw = asRecord(await this.read("get_treasury"));
     return {
-      pool: toWei(raw?.pool),
-      escrowed: toWei(raw?.escrowed),
-      proposal_count: toNumber(raw?.proposal_count),
+      pool: toWei(raw.pool),
+      escrowed: toWei(raw.escrowed),
+      proposal_count: toNumber(raw.proposal_count),
     };
   }
 
   async getOwner(): Promise<string> {
-    return String((await this.read<unknown>("get_owner")) ?? "");
+    return toStringValue(await this.read("get_owner"));
   }
 
   async getProposal(pid: number): Promise<GrantProposal> {
-    return normalizeProposal(await this.read<any>("get_proposal", [pid]));
+    return normalizeProposal(await this.read("get_proposal", [pid]));
   }
 
   async getProposals(start = 1, limit = DEFAULT_PAGE_SIZE): Promise<GrantProposal[]> {
-    const rows = await this.read<any[]>("get_proposals", [start, limit]);
-    if (!Array.isArray(rows)) return [];
-    return rows.map(normalizeProposal);
+    const rows = await this.read<unknown>("get_proposals", [start, limit]);
+    return Array.isArray(rows) ? rows.map(normalizeProposal) : [];
   }
 
   async getLatestProposalId(applicant: string): Promise<number> {
-    return toNumber(await this.read<unknown>("get_latest_proposal_id", [applicant]));
+    return toNumber(await this.read("get_latest_proposal_id", [applicant]));
   }
 
   async fund(amount: bigint): Promise<TransactionReceipt> {
