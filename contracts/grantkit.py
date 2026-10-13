@@ -2,6 +2,7 @@
 
 from genlayer import *
 import json
+import hashlib
 
 MAX_TITLE = 100
 MAX_PITCH = 4000
@@ -199,6 +200,10 @@ def _check_params(criteria, pass_tier, milestone_tier, max_award, submission_dep
         _fail("inactivity_days must be 7-365")
 
 
+def _sha256(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+
+
 def _fetch(url: str):
     try:
         response = gl.nondet.web.get(url)
@@ -226,21 +231,35 @@ def _parse_tier(raw) -> str:
     return "INCONCLUSIVE"
 
 
-def _evaluate(task: str, urls: list) -> str:
+def _evaluate_with_provenance(task: str, urls: list) -> dict:
+    """Fetch evidence, hash it, run the LLM, and return both the tier and the digests."""
     def leader() -> str:
         chunks = []
+        digests = []
         for url in urls:
             txt = _fetch(url)
             if txt is None:
                 return "FETCH_FAIL"
+            digest = _sha256(txt)
+            digests.append({"url": url, "digest": digest, "chars": len(txt)})
             chunks.append(
                 "<untrusted_web_content>\nSOURCE: " + url + "\n" + _clean(txt)
                 + "\n</untrusted_web_content>"
             )
         prompt = task + "\n\n" + "\n\n".join(chunks) + OUTPUT_SUFFIX
-        return _parse_tier(gl.nondet.exec_prompt(prompt))
+        tier = _parse_tier(gl.nondet.exec_prompt(prompt))
+        return json.dumps({"tier": tier, "evidence": digests}, sort_keys=True)
 
-    return gl.eq_principle.strict_eq(leader)
+    raw = gl.eq_principle.strict_eq(leader)
+    if raw == "FETCH_FAIL":
+        return {"tier": "FETCH_FAIL", "evidence": []}
+    try:
+        parsed = json.loads(raw)
+        if not isinstance(parsed, dict):
+            return {"tier": "INCONCLUSIVE", "evidence": []}
+        return parsed
+    except Exception:
+        return {"tier": "INCONCLUSIVE", "evidence": []}
 
 
 def _checked_tier(tier) -> str:
@@ -414,8 +433,11 @@ class OpenCriteriaGrants(gl.Contract):
             _fail("you already have an active grant")
 
         criteria = str(self.criteria)
-        tier = _checked_tier(_evaluate(
-            _proposal_task(criteria, title, pitch, links, milestones, amount), list(links)))
+        criteria_version = int(self.criteria_version)
+        result = _evaluate_with_provenance(
+            _proposal_task(criteria, title, pitch, links, milestones, amount), list(links))
+        tier = _checked_tier(result.get("tier", "INCONCLUSIVE"))
+        evidence = result.get("evidence", [])
         tv = TIER_VALUE[tier]
         passed = tv >= int(self.pass_tier)
 
@@ -439,13 +461,22 @@ class OpenCriteriaGrants(gl.Contract):
             "tier": tier,
             "score": TIER_SCORE[tv],
             "criteria": criteria,
-            "criteria_version": int(self.criteria_version),
+            "criteria_version": criteria_version,
+            "criteria_digest": _sha256(criteria),
             "created_at": now,
             "last_activity": now,
             "feedback": FEEDBACK[tier],
             "log": [{
-                "type": "proposal", "tier": tier, "score": TIER_SCORE[tv],
-                "passed": passed, "feedback": FEEDBACK[tier], "at": now,
+                "type": "proposal",
+                "tier": tier,
+                "score": TIER_SCORE[tv],
+                "passed": passed,
+                "feedback": FEEDBACK[tier],
+                "at": now,
+                "criteria_version": criteria_version,
+                "criteria_digest": _sha256(criteria),
+                "evidence": evidence,
+                "applicant": sender,
             }],
         }
 
@@ -493,17 +524,28 @@ class OpenCriteriaGrants(gl.Contract):
         frozen = str(row.get("criteria", "")).strip()
         if len(frozen) < 20:
             _fail("approved grant has no frozen criteria")
-        tier = _checked_tier(_evaluate(
+        result = _evaluate_with_provenance(
             _milestone_task(frozen, row["title"], row["pitch"], row["milestones"][idx],
                             idx, total, evidence_url, notes.strip()),
-            [evidence_url]))
+            [evidence_url])
+        tier = _checked_tier(result.get("tier", "INCONCLUSIVE"))
+        evidence = result.get("evidence", [])
         tv = TIER_VALUE[tier]
         passed = tv >= int(row["ms_tier"])
         now = _now()
 
         row["log"].append({
-            "type": "milestone", "index": idx, "tier": tier, "score": TIER_SCORE[tv],
-            "passed": passed, "feedback": FEEDBACK[tier], "at": now,
+            "type": "milestone",
+            "index": idx,
+            "tier": tier,
+            "score": TIER_SCORE[tv],
+            "passed": passed,
+            "feedback": FEEDBACK[tier],
+            "at": now,
+            "criteria_digest": _sha256(frozen),
+            "evidence": evidence,
+            "applicant": row["applicant"],
+            "evidence_url": evidence_url,
         })
         row["feedback"] = FEEDBACK[tier]
 
@@ -628,6 +670,7 @@ class OpenCriteriaGrants(gl.Contract):
             "pending_owner": str(self.pending_owner),
             "criteria": str(self.criteria),
             "criteria_version": int(self.criteria_version),
+            "criteria_digest": _sha256(str(self.criteria)),
             "pass_tier": int(self.pass_tier),
             "pass_tier_name": TIER_NAMES[int(self.pass_tier)],
             "milestone_tier": int(self.milestone_tier),

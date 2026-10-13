@@ -47,17 +47,17 @@ Copy the example environment file:
 cp .env.example .env
 ```
 
-To connect to a live deployed GenLayer contract, set `VITE_GRANTKIT_CONTRACT_ADDRESS`:
+To connect to a live deployed GenLayer contract, set `VITE_CONTRACT_ADDRESS`:
 
 ```env
 # GenLayer GrantKit Intelligent Contract Address
-VITE_GRANTKIT_CONTRACT_ADDRESS="0x..."
+VITE_CONTRACT_ADDRESS="0x44cf3e80cF4149628dE7362BF9eAbAb0918dEB47"
 
 # GenLayer RPC URL (defaults to GenLayer studionet)
 VITE_GENLAYER_RPC_URL="https://studio.genlayer.com/api"
 ```
 
-*Note: If `VITE_GRANTKIT_CONTRACT_ADDRESS` is empty, GrantKit seamlessly operates in GenLayer studionet Sandbox mode, allowing full end-to-end interactive testing with simulated validator consensus delays, milestone unlocking, and state persistence.*
+*Note: If `VITE_CONTRACT_ADDRESS` is empty, GrantKit seamlessly operates in GenLayer studionet Sandbox mode, allowing full end-to-end interactive testing with simulated validator consensus delays, milestone unlocking, and state persistence.*
 
 ### 3. Run Development Server
 

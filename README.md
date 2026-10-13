@@ -1,61 +1,100 @@
 # GrantKit
 
-Open-criteria grants on GenLayer. One deployed contract is one grant program. Anyone can fund the pool. Applicants submit a proposal, validators rate it against the criteria locked in the contract, and an approved grant pays out in milestone tranches held in escrow.
+> Decentralized intelligent grants platform powered by on-chain LLM committee consensus on **GenLayer**.
 
-## How a grant runs
+GrantKit removes subjective human bias and opaque committees from ecosystem grants. Applicants submit technical proposals with public criteria milestones, GenLayer validator nodes fetch referenced GitHub repositories and specifications via GenLayer Web-Access, and on-chain LLMs execute consensus scoring against public criteria. Approved proposals receive immediately released initial tranches, with remaining funds escrowed until deliverable proof is audited on-chain.
 
-The owner sets the criteria, the pass tier, the milestone tier, the maximum award, the submission deposit, the milestone cap, the attempt cap, and the inactivity window at deploy time.
+---
 
-An applicant sends the exact deposit and a proposal: title, pitch, public https links, milestone text, and a requested amount. Validators fetch those links and return one word: DISQUALIFIED, FAIL, PARTIAL, PASS, or EXCELLENT. A result at or above the pass tier is approved. Anything lower is rejected. A rejected deposit is added to the pool. An approved deposit is refunded with the first tranche.
+## Architecture & Contract Interface
 
-The award is split across the milestones. The first tranche is paid on approval. Later tranches stay in escrow until that milestone passes its own review. The last tranche receives any remainder from integer division. A void or failed milestone does not pay. It consumes one attempt. After every attempt is used, only the owner can cancel, and the unreleased amount returns to the pool.
+The front end communicates directly with the GenLayer intelligent contract interface using `genlayer-js`:
 
-The applicant can abandon an active grant. Anyone can reclaim one after its inactivity window. Both return unreleased funds to the pool, not to the caller. The owner can withdraw only the unreserved pool. Escrow cannot be withdrawn that way.
+### Contract Reads
+- `get_config()`: Retrieves governance parameters (pass threshold, milestone threshold, tolerance, max award cap, submission deposit, criteria version, public criteria text, and pause state).
+- `get_treasury()`: Returns available unescrowed pool liquidity, locked milestone escrow, and total proposals.
+- `get_proposal(pid)`: Returns full proposal details, milestone breakdown, tranches, consensus score, status, and JSON audit log.
+- `get_proposals(start, limit)`: Paginated query across all historical submissions.
+- `get_latest_proposal_id(applicant)`: Resolves active grant proposal ID for a connected wallet address.
 
-## Rules
+### Contract Writes
+- `fund(amount)` (payable): Supplies capital to the treasury pool.
+- `submit_proposal(title, pitch, links, milestones, amount)` (payable): Submits proposal with anti-spam deposit bond, initiating validator link verification and committee consensus scoring.
+- `submit_milestone(pid, evidence_url, notes)`: Submits evidence URL for the current active tranche.
+- `abandon_grant(pid)`: Grantee voluntarily relinquishes active grant; unreleased escrow funds return to the treasury pool.
+- `cancel_stalled_grant(pid)`: Owner cancels a grant that has exhausted its retry attempt cap.
+- `withdraw_pool(amount)`: Owner withdraws unallocated pool funds (escrowed funds cannot be withdrawn).
+- `set_criteria(new_criteria)`: Updates public criteria directive (increments version, applies to new submissions).
+- `set_parameters(...)`: Governs protocol thresholds and limits.
+- `set_paused(paused)`: Emergency circuit breaker.
+- `propose_owner(new_owner)` & `accept_ownership()`: Two-step ownership transfer.
 
-- Criteria must be 20 to 4000 characters. Pass tier and milestone tier must be 2, 3, or 4.
-- Maximum award is at least 1. Deposit cannot be negative. Milestones are 1 to 12. Attempts are 1 to 10. Inactivity is 7 to 365 days.
-- Links must be public https URLs with a domain name. IP literals and local names are rejected.
-- The requested amount must cover one unit per milestone, must not exceed the maximum award, and must fit in the pool.
-- The owner cannot apply. An applicant can have only one approved grant at a time.
-- A paused contract rejects new proposals and milestone submissions. Abandon, reclaim, and owner controls still run.
-- Ownership transfer is two steps: the owner proposes, the pending owner accepts.
+---
 
-## Contract
+## Getting Started
 
-File: contracts/grantkit.py
-Class: OpenCriteriaGrants
-SDK: v0.2.16
-Depends: py-genlayer:1jb45aa8ynh2a9c9xn3b7qqh8sm5q93hwfp7jqmwsfhh8jpz09h6
-Network: Studionet, studio.genlayer.com
+### 1. Installation
 
-Constructor:
+```bash
+npm install
+```
 
-OpenCriteriaGrants(criteria, pass_tier, milestone_tier, max_award, submission_deposit, max_milestones, max_attempts, inactivity_days)
+### 2. Environment Configuration
 
-Writes:
+Copy the example environment file:
 
-- fund: payable. Add GEN to the pool.
-- submit_proposal: payable. Send the exact deposit and open a proposal.
-- submit_milestone: applicant. Submit evidence for the next milestone.
-- abandon_grant: applicant. Return unreleased funds to the pool.
-- reclaim_inactive_grant: anyone, after the timeout. Return unreleased funds to the pool.
-- cancel_exhausted_grant: owner, after every attempt is used.
-- withdraw_pool: owner. Withdraw unreserved funds only.
-- set_criteria, set_parameters, set_paused: owner.
-- propose_owner, cancel_ownership_transfer, accept_ownership: two-step owner change.
+```bash
+cp .env.example .env
+```
 
-Views:
+To connect to a live deployed GenLayer contract, set `VITE_CONTRACT_ADDRESS`:
 
-get_config, get_treasury, get_proposal, get_proposals, get_latest_proposal_id, get_owner.
+```env
+# GenLayer GrantKit Intelligent Contract Address
+VITE_CONTRACT_ADDRESS="0x44cf3e80cF4149628dE7362BF9eAbAb0918dEB47"
 
-Status on a proposal is rejected, approved, completed, or cancelled.
+# GenLayer RPC URL (defaults to GenLayer studionet)
+VITE_GENLAYER_RPC_URL="https://studio.genlayer.com/api"
+```
 
-## Tests
+*Note: If `VITE_CONTRACT_ADDRESS` is empty, GrantKit seamlessly operates in GenLayer studionet Sandbox mode, allowing full end-to-end interactive testing with simulated validator consensus delays, milestone unlocking, and state persistence.*
 
-Direct mode, with web and LLM mocked. From the repo root, with genlayer-test installed:
+### 3. Run Development Server
 
-pytest tests/direct/test_grantkit.py -v
+```bash
+npm run dev
+```
 
-The suite checks funding, input rejection, owner exclusion, an approved escrow split, a rejected proposal, milestone completion, and owner-only withdrawal. The first run downloads the v0.2.16 runner.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## Testing Profiles & Roles
+
+The top navigation includes a test profile switcher in the wallet dropdown:
+
+1. **Grant Applicant (`0x42A6...48a3`)**:
+   - Holds an active approved grant (*GenVM WebAssembly Debugger*).
+   - Milestone 1 is completed and released (10,000 GEN). Milestone 2 is currently active for deliverable submission.
+2. **Contract Owner (`0x9dCF...DFB6`)**:
+   - Accesses the protected **Admin** console.
+   - Manages treasury liquidity (fund & withdraw), edits criteria versions, updates protocol parameters, toggles emergency pause, and cancels stalled grants.
+3. **Proposed Owner (`0x71C8...6c81`)**:
+   - Triggers the on-chain **Accept Ownership** action banner on the Overview page.
+4. **New Grantee (`0x992B...c75B`)**:
+   - Clean wallet with no existing grants; ready to submit a fresh grant application on the **Apply** page.
+
+---
+
+## Design System
+
+GrantKit strictly adheres to clean, flat, confident fintech infrastructure principles (inspired by Linear, Vercel, and Stripe):
+
+- **Solid Colors Only**: Zero gradients, zero glassmorphism, zero drop shadows.
+- **Strict Color Tokens**:
+  - Dark background `#0A0A0B`, surface `#111113`, surface-raised `#17171A`, border `#242428`.
+  - Light background `#FAFAFA`, surface `#FFFFFF`, surface-raised `#F4F4F5`, border `#E4E4E7`.
+  - Single solid accent `#3B6CFF`.
+  - Semantic status indicators: success `#2FA36B`, warning `#C9932B`, danger `#D2554D`.
+- **Tabular Numerals**: Tabular figures (`tabular-nums`) for all amounts, balances, scores, and timestamps.
+- **Real Stepper Feedback**: Multi-step progress tracker with live elapsed counter during validator link fetching and consensus execution.
