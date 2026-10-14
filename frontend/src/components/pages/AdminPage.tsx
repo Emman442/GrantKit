@@ -59,11 +59,11 @@ const TIER_OPTIONS = [
 
 export const AdminPage: React.FC<AdminPageProps> = ({ onNavigate }) => {
   const { address } = useWallet();
-  const isOwner = address === import.meta.env.VITE_ADMIN_ADDRESS;
   const { success: toastSuccess, error: toastError } = useToast();
   const contract = useGrantKitContract();
 
   const { data: config } = useGrantConfig();
+   const isOwner = address === config?.owner;
   const { data: treasury } = useGrantTreasury();
   const { data: proposals = [] } = useProposals(1, 50);
 

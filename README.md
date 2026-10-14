@@ -11,23 +11,25 @@ GrantKit removes subjective human bias and opaque committees from ecosystem gran
 The front end communicates directly with the GenLayer intelligent contract interface using `genlayer-js`:
 
 ### Contract Reads
-- `get_config()`: Retrieves governance parameters (pass threshold, milestone threshold, tolerance, max award cap, submission deposit, criteria version, public criteria text, and pause state).
+- `get_config()`: Retrieves governance parameters (owner, pending owner, pass tier, milestone tier, max award, submission deposit, criteria version, criteria text, and pause state).
 - `get_treasury()`: Returns available unescrowed pool liquidity, locked milestone escrow, and total proposals.
-- `get_proposal(pid)`: Returns full proposal details, milestone breakdown, tranches, consensus score, status, and JSON audit log.
+- `get_proposal(pid)`: Returns full proposal details, milestone breakdown, status, and audit log.
 - `get_proposals(start, limit)`: Paginated query across all historical submissions.
-- `get_latest_proposal_id(applicant)`: Resolves active grant proposal ID for a connected wallet address.
+- `get_latest_proposal_id(applicant)`: Resolves the latest proposal ID for a connected wallet address.
 
 ### Contract Writes
 - `fund(amount)` (payable): Supplies capital to the treasury pool.
-- `submit_proposal(title, pitch, links, milestones, amount)` (payable): Submits proposal with anti-spam deposit bond, initiating validator link verification and committee consensus scoring.
-- `submit_milestone(pid, evidence_url, notes)`: Submits evidence URL for the current active tranche.
-- `abandon_grant(pid)`: Grantee voluntarily relinquishes active grant; unreleased escrow funds return to the treasury pool.
-- `cancel_stalled_grant(pid)`: Owner cancels a grant that has exhausted its retry attempt cap.
-- `withdraw_pool(amount)`: Owner withdraws unallocated pool funds (escrowed funds cannot be withdrawn).
-- `set_criteria(new_criteria)`: Updates public criteria directive (increments version, applies to new submissions).
-- `set_parameters(...)`: Governs protocol thresholds and limits.
+- `submit_proposal(title, pitch, links, milestones, amount)` (payable): Submits a proposal with the required deposit.
+- `submit_milestone(pid, evidence_url, notes)`: Submits evidence for the next milestone.
+- `abandon_grant(pid)`: Applicant returns unreleased escrow to the pool.
+- `cancel_exhausted_grant(pid)`: Owner cancels a grant that has used every attempt.
+- `withdraw_pool(amount)`: Owner withdraws unallocated pool funds only.
+- `set_criteria(new_criteria)`: Updates the public criteria.
+- `set_parameters(...)`: Updates protocol thresholds and limits.
 - `set_paused(paused)`: Emergency circuit breaker.
 - `propose_owner(new_owner)` & `accept_ownership()`: Two-step ownership transfer.
+
+Owner and pending-owner checks in the UI are derived from `get_config`.
 
 ---
 
@@ -37,7 +39,6 @@ The front end communicates directly with the GenLayer intelligent contract inter
 
 ```bash
 npm install
-```
 
 ### 2. Environment Configuration
 
@@ -56,8 +57,6 @@ VITE_CONTRACT_ADDRESS="0x44cf3e80cF4149628dE7362BF9eAbAb0918dEB47"
 # GenLayer RPC URL (defaults to GenLayer studionet)
 VITE_GENLAYER_RPC_URL="https://studio.genlayer.com/api"
 ```
-
-*Note: If `VITE_CONTRACT_ADDRESS` is empty, GrantKit seamlessly operates in GenLayer studionet Sandbox mode, allowing full end-to-end interactive testing with simulated validator consensus delays, milestone unlocking, and state persistence.*
 
 ### 3. Run Development Server
 
