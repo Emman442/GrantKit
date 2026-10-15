@@ -148,7 +148,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({ onNavigate }) => {
 
 
   const connected = Boolean(isConnected && address);
-  const ownerAddress = config?.pending_owner;
+  const ownerAddress = config?.owner;
 
 
   const isFormValid =

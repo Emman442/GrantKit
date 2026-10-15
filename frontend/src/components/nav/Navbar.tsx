@@ -26,7 +26,7 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate }) => {
   const [copied, setCopied] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isOwner = address === config?.pending_owner;
+  const isOwner = address === config?.owner;
 
   const handleCopy = async () => {
   const ok = await copyAddress(address?? "");
