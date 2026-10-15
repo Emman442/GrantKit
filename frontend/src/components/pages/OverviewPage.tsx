@@ -19,13 +19,12 @@ interface OverviewPageProps {
 
 export const OverviewPage: React.FC<OverviewPageProps> = ({ onNavigate }) => {
   const { address } = useWallet();
-  const isPendingOwner = address === import.meta.env.VITE_ADMIN_ADDRESS?.toLowerCase();
   const { success, error } = useToast();
   const { data: config, isLoading: configLoading, refetch: refetchConfig } =
     useGrantConfig();
   const { data: treasury, isLoading: treasuryLoading } = useGrantTreasury();
   const contract = useGrantKitContract();
-
+   const isPendingOwner = address === config?.pending_owner;
   const [acceptingOwner, setAcceptingOwner] = useState(false);
   const loading = configLoading || treasuryLoading;
 

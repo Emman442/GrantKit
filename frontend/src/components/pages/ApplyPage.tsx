@@ -31,10 +31,10 @@ interface ApplyPageProps {
 
 export const ApplyPage: React.FC<ApplyPageProps> = ({ onNavigate }) => {
   const { address, isConnected, connectWallet } = useWallet();
-  const isOwner = address === import.meta.env.VITE_ADMIN_ADDRESS?.toLowerCase();
-  const { error: toastError } = useToast();
   const { data: config } = useGrantConfig();
-  const query = useGrantConfig();
+  const isOwner = address === config?.pending_owner;
+  const { error: toastError } = useToast();
+    const query = useGrantConfig();
   console.log(query.status, query.error, query.data);
   const { data: treasury } = useGrantTreasury();
   const { data: proposals = [] } = useProposals(1, 50);
@@ -148,7 +148,7 @@ export const ApplyPage: React.FC<ApplyPageProps> = ({ onNavigate }) => {
 
 
   const connected = Boolean(isConnected && address);
-  const ownerAddress = (import.meta.env.VITE_ADMIN_ADDRESS || "").toLowerCase();
+  const ownerAddress = config?.pending_owner;
 
 
   const isFormValid =

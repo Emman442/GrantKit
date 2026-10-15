@@ -5,6 +5,7 @@ import { useWallet } from '@/lib/genlayer/wallet';
 import { truncateAddress } from '../../utils/format';
 import { Button } from '../ui/Button';
 import { copyAddress } from '@/src/utils/copyAddress';
+import { useGrantConfig } from '@/lib/hooks/useGrantKit';
 
 export type PageId = 'overview' | 'apply' | 'my-grant' | 'proposals' | 'admin';
 
@@ -21,11 +22,11 @@ export const Navbar: React.FC<NavbarProps> = ({ activePage, onNavigate }) => {
     connectWallet,
     disconnectWallet,
   } = useWallet();
-
+    const { data: config } = useGrantConfig();
   const [copied, setCopied] = useState(false);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const isOwner = address === import.meta.env.VITE_ADMIN_ADDRESS?.toLowerCase();
+  const isOwner = address === config?.pending_owner;
 
   const handleCopy = async () => {
   const ok = await copyAddress(address?? "");
